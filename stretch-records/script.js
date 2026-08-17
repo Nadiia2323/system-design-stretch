@@ -69,20 +69,74 @@ function renderCards(list) {
   }
 }
 statusBox.textContent = "Loading artists...";
-setTimeout(() => {
-  fetch("./artists.json")
-    .then((response) => response.json())
-    .then((artists) => {
+// setTimeout(() => {
+//   fetch("./artists.json")
+//     .then((response) => response.json())
+//     .then((artists) => {
+//       renderCards(artists);
+//     })
+//     .catch(() => (statusBox.textContent = "Something went wrong"))
+//     .finally(() => {
+//       if (statusBox.textContent === "Loading artists...") {
+//         statusBox.textContent = "";
+//       }
+//     });
+// }, 2000);
+
+setTimeout(async () => {
+  try {
+    const response = await fetch("./artists.json");
+
+    if (!response.ok) {
+      throw new Error("Could not load artists");
+    }
+
+    const artists = await response.json();
+    if (artists.length === 0) {
+      throw new MissingDataError("artists");
+    }
+    renderCards(artists);
+  } catch (error) {
+    if (error instanceof MissingDataError) {
+      statusBox.textContent =
+        "No artists are available right now. Please try again later.";
+    } else {
+      statusBox.textContent = error.message;
+    }
+  } finally {
+    if (statusBox.textContent === "Loading artists...") {
       statusBox.textContent = "";
-      renderCards(artists);
-    });
+    }
+  }
 }, 2000);
 
+class MissingDataError extends Error {
+  constructor(field) {
+    super("Required data is missing " + field);
+    this.name = "MissingDataError";
+  }
+}
+
+function checkArtist(artist) {
+  if (!artist.name) throw new MissingDataError("name");
+}
 const artist = {
-  name: "Imagine Dragons",
   genre: "Pop rock",
   total: "10:00",
 };
+
+function loadArtistForHomePage(artist) {
+  try {
+    checkArtist(artist);
+  } catch (error) {
+    throw new Error("Artist load failed for the home page. " + error.message);
+  }
+}
+try {
+  loadArtistForHomePage(artist);
+} catch (error) {
+  console.log(error.message);
+}
 
 // const artistText = JSON.stringify(artist);
 // console.log(artistText);
@@ -137,3 +191,20 @@ const timeDown = setInterval(() => {
 }, 1000);
 // The countdown displays 10 down to 0 using setInterval().
 // clearInterval() stops the interval when the count reaches 0.
+function delayedTask(name, delay) {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve(name);
+    }, delay);
+  });
+}
+const task1 = delayedTask("artists", 1000);
+const task2 = Promise.reject("albums failed");
+// const task2 = delayedTask("albums", 1500);
+const task3 = delayedTask("labels", 500);
+Promise.allSettled([task1, task2, task3]).then((results) => {
+  console.log(results);
+});
+// Promise.all() failed when the albums task rejected.
+// Promise.allSettled() returned every result, including the two fulfilled
+// tasks and the rejected albums task.
