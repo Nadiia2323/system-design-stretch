@@ -85,16 +85,32 @@ statusBox.textContent = "Loading artists...";
 
 setTimeout(async () => {
   try {
-    const response = await fetch("./artists.json");
+    const artistsRequest = fetch("http://localhost:3000/artists").then(
+      (response) => {
+        if (!response.ok) {
+          throw new Error(`Request failed with status ${response.status}`);
+        }
+        return response.json();
+      },
+    );
 
-    if (!response.ok) {
-      throw new Error("Could not load artists");
-    }
+    const labelRequest = fetch("http://localhost:3001/label").then(
+      (response) => {
+        if (!response.ok) {
+          throw new Error(`Request failed with status ${response.status}`);
+        }
+        return response.json();
+      },
+    );
 
-    const artists = await response.json();
+    const [artists, label] = await Promise.all([artistsRequest, labelRequest]);
+
+    console.log(label);
+
     if (artists.length === 0) {
       throw new MissingDataError("artists");
     }
+
     renderCards(artists);
   } catch (error) {
     if (error instanceof MissingDataError) {
@@ -109,7 +125,6 @@ setTimeout(async () => {
     }
   }
 }, 2000);
-
 class MissingDataError extends Error {
   constructor(field) {
     super("Required data is missing " + field);
@@ -169,12 +184,26 @@ const form = document.querySelector(".signup");
 const nameInput = document.querySelector("#artist-name");
 const genreInput = document.querySelector("#artist-genre");
 
-form.addEventListener("submit", (event) => {
+form.addEventListener("submit", async (event) => {
   event.preventDefault();
   const name = nameInput.value;
   if (name) {
     const genre = genreInput.value || "Unsigned";
-    renderCards([{ name: name, genre: genre, total: "0:00" }]);
+    try {
+      const response = await fetch("http://localhost:3000/artists", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: name,
+          genre: genre,
+          total: "0:00",
+        }),
+      });
+      console.log(response.status);
+    } catch (error) {
+      console.log(error.message);
+    }
+    // renderCards([{ name: name, genre: genre, total: "0:00" }]);
     nameInput.value = "";
     genreInput.value = "";
   }
