@@ -37,6 +37,7 @@
 // ];
 
 const cardArea = document.querySelector(".cards");
+const statusBox = document.querySelector(".status");
 
 // Every artist currently on the page, whatever the data's source. renderCards
 // maintains this list, so the shuffle button and the form keep working no
@@ -67,17 +68,21 @@ function renderCards(list) {
     cardArea.append(buildCard(artist));
   }
 }
+statusBox.textContent = "Loading artists...";
+setTimeout(() => {
+  fetch("./artists.json")
+    .then((response) => response.json())
+    .then((artists) => {
+      statusBox.textContent = "";
+      renderCards(artists);
+    });
+}, 2000);
 
-fetch("./artists.json")
-  .then((response) => response.json())
-  .then((artists) => {
-    renderCards(artists);
-  });
-// const artist = {
-//   name: "Imagine Dragons",
-//   genre: "Pop rock",
-//   total: "10:00",
-// };
+const artist = {
+  name: "Imagine Dragons",
+  genre: "Pop rock",
+  total: "10:00",
+};
 
 // const artistText = JSON.stringify(artist);
 // console.log(artistText);
@@ -97,6 +102,13 @@ shuffleButton.addEventListener("click", () => {
     `Featured today: ${pick.name}`;
 });
 
+// const freeze = document
+//   .querySelector("#freeze")
+//   .addEventListener("click", () => {
+//     const until = Date.now() + 5000;
+//     while (Date.now() < until) {}
+//     console.log("done");
+//   });
 // The suggestion form: an empty submission does nothing, because an empty
 // string is falsy.
 const form = document.querySelector(".signup");
@@ -113,3 +125,15 @@ form.addEventListener("submit", (event) => {
     genreInput.value = "";
   }
 });
+
+let count = 10;
+const timeDown = setInterval(() => {
+  console.log(count);
+  count--;
+  if (count === 0) {
+    clearInterval(timeDown);
+    console.log("countDown stopped");
+  }
+}, 1000);
+// The countdown displays 10 down to 0 using setInterval().
+// clearInterval() stops the interval when the count reaches 0.
